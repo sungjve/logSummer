@@ -1,0 +1,9 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+logSummerBE/build
+logSummerBE/app/src/main/resources/application.properties
+
+#Ignore 중요정보
+logServer.pem
