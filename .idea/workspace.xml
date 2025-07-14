@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a3825d1-3f8c-446a-88c8-bb18475fee90" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logSummerBE/app/src/main/java/log/summer/be/LogBatchProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/logSummerBE/app/src/main/java/log/summer/be/LogBatchProcessor.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,6 +42,7 @@
     &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
     &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;Spring Boot.App.executor&quot;: &quot;Run&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
@@ -75,8 +78,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fdfe4dae3a2d-intellij.indexing.shared.core-IU-243.22562.218" />
-        <option value="bundled-js-predefined-d6986cc7102b-deb605915726-JavaScript-IU-243.22562.218" />
+        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.26574.91" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.26574.91" />
       </set>
     </attachedChunks>
   </component>
@@ -89,7 +92,13 @@
       <option name="presentableId" value="Default" />
       <updated>1751863008825</updated>
       <workItem from="1751863010430" duration="8684000" />
-      <workItem from="1751953660466" duration="11423000" />
+      <workItem from="1751953660466" duration="11972000" />
+      <workItem from="1752471065046" duration="25000" />
+      <workItem from="1752471092470" duration="8000" />
+      <workItem from="1752471108428" duration="8000" />
+      <workItem from="1752471124311" duration="63000" />
+      <workItem from="1752471283963" duration="35000" />
+      <workItem from="1752471328068" duration="7000" />
     </task>
     <servers />
   </component>
