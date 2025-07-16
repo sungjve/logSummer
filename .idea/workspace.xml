@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a3825d1-3f8c-446a-88c8-bb18475fee90" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logSummerBE/app/src/main/java/log/summer/be/LogBatchProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/logSummerBE/app/src/main/java/log/summer/be/LogBatchProcessor.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,6 +97,8 @@
       <workItem from="1752471124311" duration="63000" />
       <workItem from="1752471283963" duration="35000" />
       <workItem from="1752471328068" duration="7000" />
+      <workItem from="1752471343309" duration="61000" />
+      <workItem from="1752471410308" duration="24000" />
     </task>
     <servers />
   </component>

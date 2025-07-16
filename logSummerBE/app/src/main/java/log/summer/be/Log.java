@@ -1,8 +1,14 @@
 package log.summer.be;
 
-public class Log {
+import java.io.Serializable;
+
+public class Log implements Serializable {
     private String serviceName;
     private String message;
+
+    // 기본 생성자 (JSON 역직렬화를 위해 필요)
+    public Log() {
+    }
 
     public String getServiceName() {
         return serviceName;

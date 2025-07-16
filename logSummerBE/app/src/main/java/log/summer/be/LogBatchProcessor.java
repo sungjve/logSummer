@@ -1,23 +1,32 @@
 package log.summer.be;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class LogBatchProcessor implements DisposableBean {
 
-    private final BlockingQueue<Log> logQueue;
     private final LogRepository logRepository;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
     private final ExecutorService workerPool;
     private final ExecutorService leaderThread;
+
+    private static final String LOG_QUEUE_KEY = "log:queue";
 
     @Value("${log.batch.size:100}")
     private int batchSize;
@@ -27,10 +36,11 @@ public class LogBatchProcessor implements DisposableBean {
 
     private final AtomicLong totalLogsSaved = new AtomicLong(0);
 
-    public LogBatchProcessor(LogRepository logRepository) {
+    public LogBatchProcessor(LogRepository logRepository, RedisTemplate<String, String> redisTemplate, ObjectMapper objectMapper) {
         this.logRepository = logRepository;
-        this.logQueue = new LinkedBlockingQueue<>();
-        // 워커 스레드 풀: 데이터베이스에 로그를 쓰는 작업을 처리
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+
         this.workerPool = Executors.newFixedThreadPool(10, new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
             @Override
@@ -41,7 +51,7 @@ public class LogBatchProcessor implements DisposableBean {
                 return t;
             }
         });
-        // 리더 스레드: 큐를 감시하고 작업을 워커 풀에 제출
+
         this.leaderThread = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -62,44 +72,44 @@ public class LogBatchProcessor implements DisposableBean {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 List<Log> logsToSave = new ArrayList<>();
-                // 첫 번째 로그를 가져올 때까지 대기
-                logsToSave.add(logQueue.take());
 
-                // 타임아웃 또는 배치 크기에 도달할 때까지 추가 로그를 수집
-                long timeoutNanos = TimeUnit.SECONDS.toNanos(batchTimeoutSeconds);
-                long deadline = System.nanoTime() + timeoutNanos;
+                // Redis의 BRPOP을 사용하여 첫 번째 로그를 가져올 때까지 대기 (타임아웃 0은 무한대기)
+                String firstLogString = redisTemplate.opsForList().rightPop(LOG_QUEUE_KEY, 0, TimeUnit.SECONDS);
+                if (firstLogString != null) {
+                    logsToSave.add(deserializeLog(firstLogString));
+                }
 
+                // 추가 로그를 배치 크기만큼 최대한 빠르게 가져옴 (non-blocking)
                 while (logsToSave.size() < batchSize) {
-                    long remainingNanos = deadline - System.nanoTime();
-                    if (remainingNanos <= 0) {
-                        break; // 타임아웃
+                    String logString = redisTemplate.opsForList().rightPop(LOG_QUEUE_KEY);
+                    if (logString == null) {
+                        break; // 큐가 비었으면 중단
                     }
-                    Log log = logQueue.poll(remainingNanos, TimeUnit.NANOSECONDS);
-                    if (log == null) {
-                        break; // 타임아웃
-                    }
-                    logsToSave.add(log);
+                    logsToSave.add(deserializeLog(logString));
                 }
 
                 if (!logsToSave.isEmpty()) {
                     submitBatch(logsToSave);
                 }
 
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.out.println("Leader thread interrupted, shutting down.");
-                break;
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                System.err.println("Error processing log queue: " + e.getMessage());
+                // 잠시 후 재시도
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
-        // 루프 종료 후 남은 로그 처리
-        flushRemainingOnShutdown();
     }
 
-    public void addLog(Log log) {
-        // 큐가 가득 찼을 경우를 대비해 offer 사용 (LinkedBlockingQueue는 기본적으로 unbounded)
-        if (!logQueue.offer(log)) {
-            System.err.println("Log queue is full. Log was dropped.");
-        }
+    private Log deserializeLog(String logString) throws IOException {
+        return objectMapper.readValue(logString, Log.class);
     }
 
     private void submitBatch(List<Log> logs) {
@@ -114,31 +124,17 @@ public class LogBatchProcessor implements DisposableBean {
                 System.out.println("Saved " + count + " logs in batch. Total logs saved: " + totalLogsSaved.get());
             } catch (Exception e) {
                 System.err.println("Error saving logs in batch: " + e.getMessage());
-                // 실패 처리 로직 (예: 로그 파일에 기록, 재시도 큐에 추가)
             }
         });
-    }
-
-    private void flushRemainingOnShutdown() {
-        List<Log> remainingLogs = new ArrayList<>();
-        logQueue.drainTo(remainingLogs);
-        if (!remainingLogs.isEmpty()) {
-            System.out.println("Flushing " + remainingLogs.size() + " remaining logs on shutdown.");
-            submitBatch(remainingLogs);
-        }
     }
 
     @Override
     public void destroy() throws InterruptedException {
         System.out.println("Shutting down LogBatchProcessor...");
-        // 리더 스레드 종료
-        leaderThread.shutdownNow(); // interrupt() 호출
+        leaderThread.shutdownNow();
         if (!leaderThread.awaitTermination(5, TimeUnit.SECONDS)) {
             System.err.println("Leader thread did not terminate in time.");
         }
-
-        // 종료 직전에 큐에 남은 로그 모두 처리
-        flushRemainingOnShutdown();
 
         // 워커 풀 종료
         workerPool.shutdown();
