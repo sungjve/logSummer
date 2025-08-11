@@ -11,4 +11,5 @@ plugins {
 }
 
 rootProject.name = 'log-summer-be'
-include('app')
+include('log-producer')
+include('log-consumer')
